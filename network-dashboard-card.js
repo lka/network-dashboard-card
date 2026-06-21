@@ -18,6 +18,7 @@ const LitElement = customElements.get("home-assistant-main")
   : Object.getPrototypeOf(customElements.get("hui-view"));
 const html = LitElement.prototype.html;
 const css = LitElement.prototype.css;
+const svg = LitElement.prototype.svg || html;
 
 const LINK_COLORS = {
   online: { stroke: "#22C55E", marker: "url(#arr-ok)", opacity: "0.85", width: "1.8" },
@@ -477,44 +478,50 @@ class NetworkDashboardCard extends LitElement {
     const nodesById = {};
     layout.nodes.forEach((n) => (nodesById[n.id] = n));
 
-    const linksSvg = layout.links.map((link) => {
+    const linkTemplates = layout.links.map((link) => {
       const from = nodesById[link.from];
       const to = nodesById[link.to];
-      if (!from || !to) return "";
+      if (!from || !to) return svg``;
       const status = this._linkStatus(link, nodesById);
       const c = LINK_COLORS[status] || LINK_COLORS.unknown;
       const x1 = from.x + from.w;
       const y1 = from.y + from.h / 2;
       const x2 = to.x;
       const y2 = to.y + to.h / 2;
-      return `<line id="${link.id}" class="topo-link"
-        x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"
-        stroke="${c.stroke}" stroke-width="${c.width}" stroke-dasharray="7,4" opacity="${c.opacity}"
-        marker-end="${c.marker}">
-        <animate attributeName="stroke-dashoffset" from="22" to="0" dur="1.4s" repeatCount="indefinite"/>
-      </line>`;
+      return svg`
+        <line id="${link.id}" class="topo-link"
+          x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"
+          stroke="${c.stroke}" stroke-width="${c.width}" stroke-dasharray="7,4" opacity="${c.opacity}"
+          marker-end="${c.marker}">
+          <animate attributeName="stroke-dashoffset" from="22" to="0" dur="1.4s" repeatCount="indefinite"/>
+        </line>
+      `;
     });
 
-    const nodesSvg = layout.nodes.map((n) => {
+    const nodeTemplates = layout.nodes.map((n) => {
       if (n.isInternet) {
         const status = internetEntity ? this._binaryState(internetEntity) : "unknown";
         const color = { online: "#22C55E", offline: "#EF4444", unknown: "#64748B" }[status];
-        return `<g transform="translate(${n.x},${n.y})">
-          <rect x="0" y="0" width="${n.w}" height="${n.h}" rx="10" fill="#16202E" stroke="${color}" stroke-width="1"/>
-          <text x="${n.w / 2}" y="22" text-anchor="middle" fill="${color}" font-size="20">☁</text>
-          <text x="${n.w / 2}" y="38" text-anchor="middle" fill="${color}" font-family="Inter" font-size="7.5">Internet</text>
-        </g>`;
+        return svg`
+          <g transform="translate(${n.x},${n.y})">
+            <rect x="0" y="0" width="${n.w}" height="${n.h}" rx="10" fill="#16202E" stroke="${color}" stroke-width="1"></rect>
+            <text x="${n.w / 2}" y="22" text-anchor="middle" fill="${color}" font-size="20">☁</text>
+            <text x="${n.w / 2}" y="38" text-anchor="middle" fill="${color}" font-family="Inter" font-size="7.5">Internet</text>
+          </g>
+        `;
       }
       const d = n.device;
       const status = this._deviceStatus(d);
       const color = { online: "#22C55E", offline: "#EF4444", unknown: "#64748B" }[status];
       const iconChar = d.topo_icon || "⊞";
-      return `<g transform="translate(${n.x},${n.y})" filter="url(#glow)">
-        <rect x="0" y="0" width="${n.w}" height="${n.h}" rx="10" fill="#16202E" stroke="${color}" stroke-width="1.5"/>
-        <text x="${n.w / 2}" y="19" text-anchor="middle" fill="${color}" font-family="JetBrains Mono" font-size="12">${iconChar}</text>
-        <text x="${n.w / 2}" y="31" text-anchor="middle" fill="#E2E8F0" font-family="Inter" font-size="7.5">${d.name}</text>
-        <text x="${n.w / 2}" y="41" text-anchor="middle" fill="${color}" font-family="JetBrains Mono" font-size="6.5">${d.role || ""}</text>
-      </g>`;
+      return svg`
+        <g transform="translate(${n.x},${n.y})" filter="url(#glow)">
+          <rect x="0" y="0" width="${n.w}" height="${n.h}" rx="10" fill="#16202E" stroke="${color}" stroke-width="1.5"></rect>
+          <text x="${n.w / 2}" y="19" text-anchor="middle" fill="${color}" font-family="JetBrains Mono" font-size="12">${iconChar}</text>
+          <text x="${n.w / 2}" y="31" text-anchor="middle" fill="#E2E8F0" font-family="Inter" font-size="7.5">${d.name}</text>
+          <text x="${n.w / 2}" y="41" text-anchor="middle" fill="${color}" font-family="JetBrains Mono" font-size="6.5">${d.role || ""}</text>
+        </g>
+      `;
     });
 
     return html`
@@ -528,23 +535,25 @@ class NetworkDashboardCard extends LitElement {
           </div>
         </div>
         <svg id="topo-svg" viewBox="0 0 ${layout.width} ${layout.height}" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <marker id="arr-ok" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-              <path d="M0,0 L6,3 L0,6 Z" fill="#22C55E" opacity=".8"/>
-            </marker>
-            <marker id="arr-err" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-              <path d="M0,0 L6,3 L0,6 Z" fill="#EF4444" opacity=".9"/>
-            </marker>
-            <marker id="arr-unk" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-              <path d="M0,0 L6,3 L0,6 Z" fill="#64748B" opacity=".7"/>
-            </marker>
-            <filter id="glow">
-              <feGaussianBlur stdDeviation="2.5" result="blur"/>
-              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-          </defs>
-          ${this._unsafeSvgFragment(linksSvg.join(""))}
-          ${this._unsafeSvgFragment(nodesSvg.join(""))}
+          ${svg`
+            <defs>
+              <marker id="arr-ok" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                <path d="M0,0 L6,3 L0,6 Z" fill="#22C55E" opacity=".8"></path>
+              </marker>
+              <marker id="arr-err" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                <path d="M0,0 L6,3 L0,6 Z" fill="#EF4444" opacity=".9"></path>
+              </marker>
+              <marker id="arr-unk" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                <path d="M0,0 L6,3 L0,6 Z" fill="#64748B" opacity=".7"></path>
+              </marker>
+              <filter id="glow">
+                <feGaussianBlur stdDeviation="2.5" result="blur"></feGaussianBlur>
+                <feMerge><feMergeNode in="blur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
+              </filter>
+            </defs>
+          `}
+          ${linkTemplates}
+          ${nodeTemplates}
         </svg>
       </div>
     `;
@@ -555,20 +564,6 @@ class NetworkDashboardCard extends LitElement {
     const div = document.createElement("template");
     div.innerHTML = str;
     return div.content;
-  }
-
-  // Helfer speziell für SVG-Kindelemente (line, g, text, ...): muss über den
-  // XML/SVG-Parser laufen, sonst landen die Elemente im falschen Namespace
-  // und bleiben unsichtbar, wenn sie in echtes <svg> eingefügt werden.
-  _unsafeSvgFragment(str) {
-    const wrapped = `<svg xmlns="http://www.w3.org/2000/svg">${str}</svg>`;
-    const doc = new DOMParser().parseFromString(wrapped, "image/svg+xml");
-    const root = doc.documentElement;
-    const frag = document.createDocumentFragment();
-    while (root.firstChild) {
-      frag.appendChild(root.firstChild);
-    }
-    return frag;
   }
 
   // ── Render: Status-Chips ──
