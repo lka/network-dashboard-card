@@ -6,8 +6,12 @@
  * und optional VoIP-Rufnummern-Registrierungsstatus.
  *
  * Beispiel-Konfiguration siehe README.md
+ *
+ * Hinweis: Editor-Code (network-dashboard-card-editor) ist absichtlich
+ * direkt unten in dieser Datei enthalten statt per import eingebunden,
+ * damit HACS/Lovelace nur eine einzige JS-Datei laden muss (robuster
+ * gegen Pfadprobleme bei relativen Imports über /hacsfiles/).
  */
-import "./network-dashboard-card-editor.js";
 
 const LitElement = customElements.get("home-assistant-main")
   ? Object.getPrototypeOf(customElements.get("home-assistant-main"))
@@ -772,3 +776,81 @@ window.customCards.push({
   name: "Network Dashboard Card",
   description: "Netzwerktopologie mit Live-Status und Reboot-Funktion, ohne Token im Frontend.",
 });
+
+// ═══════════════════════════════════════════════════════════
+// EDITOR (im selben File, siehe Hinweis am Dateianfang)
+// ═══════════════════════════════════════════════════════════
+if (!customElements.get("network-dashboard-card-editor")) {
+  class NetworkDashboardCardEditor extends HTMLElement {
+    setConfig(config) {
+      this._config = config;
+      this._render();
+    }
+
+    set hass(hass) {
+      this._hass = hass;
+    }
+
+    configChanged(newConfig) {
+      const event = new CustomEvent("config-changed", {
+        detail: { config: newConfig },
+        bubbles: true,
+        composed: true,
+      });
+      this.dispatchEvent(event);
+    }
+
+    _render() {
+      if (this._rendered) return;
+      this._rendered = true;
+
+      const wrapper = document.createElement("div");
+      wrapper.style.padding = "12px";
+
+      const hint = document.createElement("div");
+      hint.style.marginBottom = "8px";
+      hint.style.fontSize = "0.85rem";
+      hint.style.opacity = "0.75";
+      hint.textContent =
+        "Network Dashboard Card – Konfiguration als YAML. Siehe README im Repository für das vollständige Schema (devices, parent, voip_numbers, internet_entity, ...).";
+
+      const textarea = document.createElement("textarea");
+      textarea.style.width = "100%";
+      textarea.style.minHeight = "320px";
+      textarea.style.fontFamily = "monospace";
+      textarea.style.fontSize = "0.85rem";
+      textarea.style.boxSizing = "border-box";
+      textarea.value = this._toYamlLike(this._config);
+
+      textarea.addEventListener("change", () => {
+        try {
+          const parsed = this._fromYamlLike(textarea.value);
+          this.configChanged(parsed);
+          textarea.style.borderColor = "";
+        } catch (e) {
+          textarea.style.borderColor = "red";
+        }
+      });
+
+      wrapper.appendChild(hint);
+      wrapper.appendChild(textarea);
+      this.appendChild(wrapper);
+    }
+
+    _toYamlLike(config) {
+      if (window.jsyaml && window.jsyaml.dump) {
+        return window.jsyaml.dump(config);
+      }
+      return JSON.stringify(config, null, 2);
+    }
+
+    _fromYamlLike(text) {
+      if (window.jsyaml && window.jsyaml.load) {
+        return window.jsyaml.load(text);
+      }
+      return JSON.parse(text);
+    }
+  }
+
+  customElements.define("network-dashboard-card-editor", NetworkDashboardCardEditor);
+}
