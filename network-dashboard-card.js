@@ -61,6 +61,26 @@ const COL_GAP = 30;
 const TOP_MARGIN = 56;
 const SIDE_MARGIN = 20;
 
+// Berechnet den Punkt, an dem eine Linie vom Zentrum eines Rechtecks zu einem
+// Zielpunkt den Rand dieses Rechtecks verlässt. Damit enden Verbindungslinien
+// immer exakt an der Box-Kante (egal ob das Nachbar-Element links, rechts,
+// oben oder unten liegt), statt fix von "rechts" nach "links" zu laufen.
+function edgePoint(box, targetX, targetY, inset = 2) {
+  const cx = box.x + box.w / 2;
+  const cy = box.y + box.h / 2;
+  const dx = targetX - cx;
+  const dy = targetY - cy;
+  if (dx === 0 && dy === 0) return { x: cx, y: cy };
+  const halfW = box.w / 2;
+  const halfH = box.h / 2;
+  const scale = 1 / Math.max(Math.abs(dx) / halfW, Math.abs(dy) / halfH);
+  const edgeX = cx + dx * scale;
+  const edgeY = cy + dy * scale;
+  // kleiner Versatz nach außen, damit die Pfeilspitze nicht im Box-Rand verschwindet
+  const len = Math.sqrt(dx * dx + dy * dy) || 1;
+  return { x: edgeX + (dx / len) * inset, y: edgeY + (dy / len) * inset };
+}
+
 function buildTopologyLayout(devices, internetEntity) {
   const nodeWidth = {};
   devices.forEach((d) => (nodeWidth[d.id] = d.node_width || NODE_W));
@@ -491,10 +511,14 @@ class NetworkDashboardCard extends LitElement {
       if (!from || !to) return svg``;
       const status = this._linkStatus(link, nodesById);
       const c = LINK_COLORS[status] || LINK_COLORS.unknown;
-      const x1 = from.x + from.w;
-      const y1 = from.y + from.h / 2;
-      const x2 = to.x;
-      const y2 = to.y + to.h / 2;
+      const fromCenter = { x: from.x + from.w / 2, y: from.y + from.h / 2 };
+      const toCenter = { x: to.x + to.w / 2, y: to.y + to.h / 2 };
+      const p1 = edgePoint(from, toCenter.x, toCenter.y);
+      const p2 = edgePoint(to, fromCenter.x, fromCenter.y);
+      const x1 = p1.x;
+      const y1 = p1.y;
+      const x2 = p2.x;
+      const y2 = p2.y;
       return svg`
         <line id="${link.id}" class="topo-link"
           x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"
