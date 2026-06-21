@@ -534,8 +534,8 @@ class NetworkDashboardCard extends LitElement {
             <div class="legend-item"><div class="legend-line" style="background:#64748B"></div>Unbekannt</div>
           </div>
         </div>
-        <svg id="topo-svg" viewBox="0 0 ${layout.width} ${layout.height}" xmlns="http://www.w3.org/2000/svg">
-          ${svg`
+        ${svg`
+          <svg id="topo-svg" viewBox="0 0 ${layout.width} ${layout.height}" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <marker id="arr-ok" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
                 <path d="M0,0 L6,3 L0,6 Z" fill="#22C55E" opacity=".8"></path>
@@ -551,10 +551,10 @@ class NetworkDashboardCard extends LitElement {
                 <feMerge><feMergeNode in="blur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
               </filter>
             </defs>
-          `}
-          ${linkTemplates}
-          ${nodeTemplates}
-        </svg>
+            ${linkTemplates}
+            ${nodeTemplates}
+          </svg>
+        `}
       </div>
     `;
   }
