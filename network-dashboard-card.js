@@ -543,8 +543,8 @@ class NetworkDashboardCard extends LitElement {
               <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
             </filter>
           </defs>
-          ${this._unsafeSvg(linksSvg.join(""))}
-          ${this._unsafeSvg(nodesSvg.join(""))}
+          ${this._unsafeSvgFragment(linksSvg.join(""))}
+          ${this._unsafeSvgFragment(nodesSvg.join(""))}
         </svg>
       </div>
     `;
@@ -555,6 +555,20 @@ class NetworkDashboardCard extends LitElement {
     const div = document.createElement("template");
     div.innerHTML = str;
     return div.content;
+  }
+
+  // Helfer speziell für SVG-Kindelemente (line, g, text, ...): muss über den
+  // XML/SVG-Parser laufen, sonst landen die Elemente im falschen Namespace
+  // und bleiben unsichtbar, wenn sie in echtes <svg> eingefügt werden.
+  _unsafeSvgFragment(str) {
+    const wrapped = `<svg xmlns="http://www.w3.org/2000/svg">${str}</svg>`;
+    const doc = new DOMParser().parseFromString(wrapped, "image/svg+xml");
+    const root = doc.documentElement;
+    const frag = document.createDocumentFragment();
+    while (root.firstChild) {
+      frag.appendChild(root.firstChild);
+    }
+    return frag;
   }
 
   // ── Render: Status-Chips ──
