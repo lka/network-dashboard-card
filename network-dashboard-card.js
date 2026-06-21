@@ -11,14 +11,21 @@
  * direkt unten in dieser Datei enthalten statt per import eingebunden,
  * damit HACS/Lovelace nur eine einzige JS-Datei laden muss (robuster
  * gegen Pfadprobleme bei relativen Imports über /hacsfiles/).
+ *
+ * Lit wird per CDN-Import geladen statt über den in vielen Custom-Card-
+ * Anleitungen üblichen "Prototyp von hui-view klauen"-Trick. Letzterer
+ * liefert in manchen HA-Frontend-Bundles kein eigenes 'svg'-Tagged-Template
+ * (nur 'html'/'css'), wodurch SVG-Kindelemente im falschen Namespace landen
+ * und unsichtbar bleiben. Der CDN-Import garantiert eine vollständige,
+ * bekannte Lit-Version.
  */
+import {
+  LitElement,
+  html,
+  css,
+  svg,
+} from "https://unpkg.com/lit@2.8.0/index.js?module";
 
-const LitElement = customElements.get("home-assistant-main")
-  ? Object.getPrototypeOf(customElements.get("home-assistant-main"))
-  : Object.getPrototypeOf(customElements.get("hui-view"));
-const html = LitElement.prototype.html;
-const css = LitElement.prototype.css;
-const svg = LitElement.prototype.svg || html;
 
 const LINK_COLORS = {
   online: { stroke: "#22C55E", marker: "url(#arr-ok)", opacity: "0.85", width: "1.8" },
