@@ -137,8 +137,7 @@ devices:
     parent: es216g
 ```
 
-Das erzeugt automatisch dieselbe Baumstruktur wie im ursprünglichen
-statischen Dashboard: Internet → FRITZ!Box → OPNsense → ES216G (Core), darunter
+Das erzeugt automatisch eine Baumstruktur: Internet → FRITZ!Box → OPNsense → ES216G (Core), darunter
 FB-DECT / ES208G #1 / ES208G #2 / EAP610 / EAP673 #1 / EAP673 #2 als Kinder von
 ES216G. Das Layout (Spalten, Zentrierung, Zeilenhöhe) wird automatisch berechnet.
 
@@ -181,10 +180,3 @@ häufigsten Fall (FRITZ!Box-Reboot-Buttons) ohne weitere Angaben ab. Bei
 anderen Services (z. B. `shell_command.reboot_xyz`) wird der Service ohne
 Target aufgerufen, es sei denn du gibst zusätzlich `target` oder
 `target_entity` an.
-
-## Sicherheitshinweis
-
-Falls du vorher eine statische HTML-Seite mit einem Long-Lived Access Token
-im Quelltext verwendet hast: Dieser Token sollte nach der Umstellung in
-Home Assistant unter deinem Benutzerprofil → *Long-Lived Access Tokens*
-gelöscht werden, auch wenn die Seite selbst nicht mehr verwendet wird.
